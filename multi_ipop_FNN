@@ -1,0 +1,90 @@
+import random
+import os
+import pandas as pd
+import numpy as np
+import csv
+import sklearn
+import operator
+from sklearn.model_selection import train_test_split
+import keras
+import tensorflow as tf
+from keras.models import Sequential
+from keras.layers import Dense, Conv2D, Flatten, Dropout, MaxPooling2D
+from keras import backend as k
+from tensorflow import keras
+from tensorflow.keras import layers
+%matplotlib
+import matplotlib.pyplot as plt
+
+from google.colab import drive
+drive.mount('/drive')
+
+!cp '/drive/My Drive/pro_trdata/scale_data/chop_dataf_scl.csv' 'chop_dataf_scl.csv'
+
+var = pd.read_csv('chop_dataf_scl.csv')
+
+x = var[var.columns[8:]]
+
+y = var[var.columns[0:8]]
+
+x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.08, random_state=10)
+print(x_train.shape); print(x_test.shape)
+
+dp_target = y_train[y_train.columns[0]]
+cls_target = y_train[y_train.columns[1:8]]
+
+inputs = keras.Input(shape=(33,), name='digits')
+x = layers.Dense(50, activation='relu', name='dense_1')(inputs)
+x = layers.Dense(40, activation='relu', name='dense_2')(x)
+x = layers.Dense(30, activation='relu', name='dense_3')(x)
+x = layers.Dense(20, activation='relu', name='dense_4')(x)
+x = layers.Dense(10, activation='relu', name='dense_5')(x)
+
+depth_output = layers.Dense(1, activation = 'linear', name='depth_output')(x)
+class_output = layers.Dense(7, activation = 'softmax', name='class_output')(x)
+
+model = keras.Model(inputs=inputs, outputs=[depth_output, class_output])
+
+model.compile(
+    optimizer=keras.optimizers.Adam(learning_rate=0.001),
+    loss={'depth_output': keras.losses.MeanSquaredError(),
+          'class_output': keras.losses.CategoricalCrossentropy()},
+    metrics={'depth_output': [keras.metrics.MeanAbsoluteError()],
+             'class_output': [keras.metrics.CategoricalAccuracy()]})
+             
+model.fit([x_train],
+          [dp_target, cls_target], # first list for multi i/p , next list for o/p targets
+          batch_size=10,
+          epochs=50,
+          validation_split=0.12)
+
+#for confusion matrix
+y_mod_pred = []
+for i in y_pred[1]:
+  vc =(list(i))
+  y_mod_pred.append(vc.index(max(vc)))
+  
+y_test = y_test.iloc[:,1:]
+y_test.shape[0]
+
+y_te=[]
+for i in range((y_test.shape[0])):
+  vc = list(y_test.iloc[i,:])
+  y_te.append(vc.index(max(vc)))
+  
+print(len(y_mod_pred))
+print(len(y_test))
+test_acc_scr=0
+cl_vc = [0 for i in range(7)]
+cl_ve = []
+for i in range(len(y_te)):
+  if y_mod_pred[i] == y_te[i]:
+    # print(y_te[i])
+    cl_vc[y_te[i]] +=1
+    test_acc_scr +=1
+print(test_acc_scr/len(y_te))
+
+cl_tb = [[0 for i in range(7)] for i in range(7)]
+for i in range(len(y_te)):
+  cl_tb[y_mod_pred[i]][y_te[i]] += 1
+cl_tb
