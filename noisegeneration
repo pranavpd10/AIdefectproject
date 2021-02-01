@@ -1,0 +1,761 @@
+import numpy as np
+from matplotlib import pyplot as plt
+import random
+import os
+import math
+
+#lida==linear data
+# creates the array of 1024 ele with random initialisation
+# random initialise a scan array
+
+
+def gausdfc(lida, start):
+    '''adding the defect in the a scan array'''
+    # 60:4250:98, 60:3900:90
+    nse_width= random.randint(48,60)
+    wi =  60
+    mul = random.randint(3900,4250)
+    x = np.arange(0, wi, 1)
+    print(nse_width)
+    mu = np.mean(x)
+    sig = np.std(x)
+    print(mu, sig)
+    y = np.exp(-((x - mu) ** 2 / (2.0 * sig ** 2))) / (sig * 2.507)
+    ve=[]
+    sample_st = wi-nse_width
+    for i in range(sample_st):
+        if y[i]> y[i+1]:
+            ve.append(y[i])
+        else:
+            ve.append(y[i+1])
+    for i in range(sample_st,wi):
+        ve.append(y[i])
+    y=np.array(ve)
+    for i in range(nse_width):
+        lida[start + i] = y[i] * mul + random.random()*0.5
+    return lida
+
+
+def spike(lida, start):
+    '''adding the defect in the a scan array'''
+    #30:2000:91
+    wi = 37
+    nse_width = random.randint(30,37)
+    mul = random.randint(2400,2650)
+    x = np.arange(0, wi, 1)
+    print(nse_width)
+    mu = np.mean(x)
+    sig = np.std(x)
+    print(mu, sig)
+    y = np.exp(-((x - mu) ** 2 / (2.0 * sig ** 2))) / (sig * 2.507)
+    ch = random.choice([True, False])
+    ve = []
+    sample_st = wi - nse_width
+    for i in range(sample_st):
+        if y[i] > y[i + 1]:
+            ve.append(y[i])
+        else:
+            ve.append(y[i + 1])
+    for i in range(sample_st, wi):
+        ve.append(y[i])
+    y = np.array(ve)
+    for i in range(nse_width):
+        lida[start + i] = y[i] * mul + random.random()*0.5
+    return lida
+
+
+def lop(lida,start):
+    # fisrt bump
+    nse_width = random.randint(30,40)
+    gap = 180 / nse_width
+    x = np.arange(0, 180, gap)
+    y = np.sin(x * np.pi / 180) * random.uniform(3,5)
+    ch = random.choice([True, False])
+    for i in range(nse_width):
+        if (i < nse_width * 75) or ch == False:
+            lida[start + i] = y[i] + random.uniform(-0.1, 0.45)
+        elif (i > nse_width * 75) and ch:
+            lida[start + i] = y[i] * random.uniform(1.2, 1.3)
+        else:
+            lida[start + i] = y[i]
+    start =  start+nse_width
+    defect_gap = random.randint(8,13)
+    gap_vec = np.random.random(defect_gap) * 0.5
+
+    for i in range(len(gap_vec)):
+        lida[start + i] = gap_vec[i]
+
+    start = start + len(gap_vec)
+
+    # main defect
+    nse_width = random.randint(43, 53)
+    wi = 60
+    mul = random.randint(3900, 4250)
+    x = np.arange(0, wi, 1)
+    print(nse_width)
+    mu = np.mean(x)
+    sig = np.std(x)
+    print(mu, sig)
+    y = np.exp(-((x - mu) ** 2 / (2.0 * sig ** 2))) / (sig * 2.507)
+    ve = []
+    sample_st = wi - nse_width
+    for i in range(sample_st):
+        if y[i] > y[i + 1]:
+            ve.append(y[i])
+        else:
+            ve.append(y[i + 1])
+    for i in range(sample_st, wi):
+        ve.append(y[i])
+    y = np.array(ve)
+    for i in range(nse_width):
+        lida[start + i] += y[i] * mul
+
+    start = start + nse_width
+    defect_gap = random.randint(8, 13)
+    gap_vec = np.random.random(defect_gap) * 0.5
+    for i in range(len(gap_vec)):
+        lida[start + i] = gap_vec[i]
+    start = start + len(gap_vec)
+
+    # last bump
+    nse_width = random.randint(30, 40)
+    gap = 180 / nse_width
+    x = np.arange(0, 180, gap)
+    y = np.sin(x * np.pi / 180) * random.uniform(3, 5)
+    ch = random.choice([True, False])
+    for i in range(nse_width):
+        if (i < nse_width * 75) or ch == False:
+            lida[start + i] = y[i] + random.uniform(-0.1, 0.45)
+        elif (i > nse_width * 75) and ch:
+            lida[start + i] = y[i] * random.uniform(1.2, 1.3)
+        else:
+            lida[start + i] = y[i]
+    return lida
+
+
+def poro(lida , start):
+    # first bump
+    nse_width1 = random.randint(35,41)
+    x1 = np.arange(0, nse_width1, 1)
+    print(nse_width1)
+    mu1 = np.mean(x1)
+    sig1 = np.std(x1)
+    print(mu1, sig1)
+    mul1 = random.randint(50,300)
+    y1 = np.exp(-((x1 - mu1) ** 2 / (2.0 * sig1 ** 2))) / (sig1 * 2.507) * mul1
+
+    # second bump
+    nse_width2 = random.randint(35,45)
+    x2 = np.arange(0, nse_width2, 1)
+    mu2 = np.mean(x2)
+    sig2 = np.std(x2)
+    mul2 = random.randint(1200, 1300)
+    y2 = np.exp(-((x2 - mu2) ** 2 / (2.0 * sig2 ** 2))) / (sig2 * 2.507) * mul2
+
+    # shift and add
+    shift1 = random.randint((nse_width1-12),(nse_width1-9))
+    print(shift1,nse_width1,nse_width2)
+
+    y=[]
+    y[:nse_width1] = y1
+    for i in range(nse_width2):
+        if (shift1 + i) < nse_width1:
+            if y[shift1+i] < y2[i]:
+                y[shift1 + i] = y2[i]
+        else:
+            y.append(y2[i])
+
+    end = start + len(y)
+    print(start, shift1, len(y),end)
+
+    # third bump
+    nse_width3 = random.randint(45,55)
+    x3 = np.arange(0, nse_width3, 1)
+    mu3 = np.mean(x3)
+    sig3= np.std(x3)
+    mul3 = random.randint(1800,1900)
+    y3 = np.exp(-((x3 - mu3) ** 2 / (2.0 * sig3 ** 2))) / (sig3 * 2.507) * mul3
+
+    shift2 = random.randint((len(y) - 25), (len(y) - 20))
+    print(shift2)
+
+    for i in range(nse_width3):
+        if (shift2 + i) < len(y):
+            if y[shift2 +i] < y3[i]:
+                y[shift2 + i] = y3[i]
+        else:
+            y.append(y3[i])
+
+    # fourt bump
+    nse_width4 = random.randint(25, 33)
+    x4 = np.arange(0, nse_width4, 1)
+    mu4 = np.mean(x4)
+    sig4 = np.std(x4)
+    mul4 = random.randint(550,650)
+    y4 = np.exp(-((x4 - mu4) ** 2 / (2.0 * sig4 ** 2))) / (sig4 * 2.507) * mul4
+
+    shift3 = len(y) - random.randint(13,18)
+    print(shift3,len(y))
+    for i in range(nse_width4):
+        if (shift3 +i) < len(y):
+            if y[shift3 + i] < y4[i]:
+                y[shift3 + i] = y4[i]
+        else:
+            y.append(y4[i])
+
+        # fifth bump
+    nse_width5 = random.randint(25, 33)
+    x5 = np.arange(0, nse_width5, 1)
+    mu5 = np.mean(x5)
+    sig5 = np.std(x5)
+    mul5 = random.randint(300, 380)
+    y5 = np.exp(-((x5 - mu5) ** 2 / (2.0 * sig5 ** 2))) / (sig5 * 2.507) * mul5
+
+    shift4 = len(y) - random.randint(10, 15)
+    print(shift4, len(y))
+    for i in range(nse_width5):
+        if (shift4 + i) < len(y):
+            if y[shift4 + i] < y5[i]:
+                y[shift4 + i] = y5[i]
+        else:
+            y.append(y5[i])
+
+    for i in range(len(y)):
+        lida[start + i] += y[i]
+    end = start + len(y)
+
+
+def rootcr(lida,start):
+    # first bump
+    nse_width1 = random.randint(25,33)
+    x1 = np.arange(0, nse_width1, 1)
+    print(nse_width1)
+    mu1 = np.mean(x1)
+    sig1 = np.std(x1)
+    print(mu1, sig1)
+    mul1 = random.randint(290,300)
+    y1 = np.exp(-((x1 - mu1) ** 2 / (2.0 * sig1 ** 2))) / (sig1 * 2.507) * mul1
+
+    # second bump
+    nse_width2 = random.randint(25,35)
+    x2 = np.arange(0, nse_width2, 1)
+    mu2 = np.mean(x2)
+    sig2 = np.std(x2)
+    mul2 = random.randint(950, 980)
+    y2 = np.exp(-((x2 - mu2) ** 2 / (2.0 * sig2 ** 2))) / (sig2 * 2.507) * mul2
+
+    # shift and add
+    shift1 = random.randint((nse_width1-9),(nse_width1-6))
+    print(shift1,nse_width1,nse_width2)
+
+    y=[]
+    y[:nse_width1] = y1
+    for i in range(nse_width2):
+        if (shift1 + i) < nse_width1:
+            if y[shift1+i] < y2[i]:
+                y[shift1 + i] = y2[i]
+        else:
+            y.append(y2[i])
+
+    end = start + len(y)
+    print(start, shift1, len(y),end)
+
+    # third bump
+    nse_width3 = random.randint(28,32)
+    x3 = np.arange(0, nse_width3, 1)
+    mu3 = np.mean(x3)
+    sig3= np.std(x3)
+    mul3 = random.randint(1900,2000)
+    y3 = np.exp(-((x3 - mu3) ** 2 / (2.0 * sig3 ** 2))) / (sig3 * 2.507) * mul3
+
+    shift2 = random.randint((len(y) - 17), (len(y) - 14))
+    print(shift2)
+
+    for i in range(nse_width3):
+        if (shift2 + i) < len(y):
+            if y[shift2 +i] < y3[i]:
+                y[shift2 + i] = y3[i]
+        else:
+            y.append(y3[i])
+
+    # fourt bump
+    nse_width4 = random.randint(25, 33)
+    x4 = np.arange(0, nse_width4, 1)
+    mu4 = np.mean(x4)
+    sig4 = np.std(x4)
+    mul4 = random.randint(650,1050)
+    y4 = np.exp(-((x4 - mu4) ** 2 / (2.0 * sig4 ** 2))) / (sig4 * 2.507) * mul4
+
+    shift3 = len(y) - random.randint(12,15)
+    print(shift3,len(y))
+    for i in range(nse_width4):
+        if (shift3 +i) < len(y):
+            if y[shift3 + i] < y4[i]:
+                y[shift3 + i] = y4[i]
+        else:
+            y.append(y4[i])
+
+    for i in range(len(y)):
+        lida[start + i] = y[i] + random.random()*0.5
+    end = start + len(y)
+    return  lida
+
+
+
+def lof(lida, start):
+    nse_width = random.randint(30,37)
+    sht = random.randint(nse_width-8,nse_width-3 )
+    if (start + nse_width + sht) < 1024:
+        x = np.arange(0, nse_width, 1)
+        mu = np.mean(x)
+        sig = np.std(x)
+        print(mu, sig)
+        y = np.exp(-((x - mu) ** 2 / (2.0 * sig ** 2))) / (sig * 2.507) * random.randint(2000,2100)
+        for i in range(nse_width):
+            lida[start + i] += y[i]
+        dbl_width = random.randint(40, 50)
+        x = np.arange(0, dbl_width, 1)
+        mu = np.mean(x)
+        sig = np.std(x)
+        y = np.exp(-((x - mu) ** 2 / (2.0 * sig ** 2))) / (sig * 2.507) * random.randint(200, 300)
+        for i in range(dbl_width):
+            if lida[start + sht + i] >= y[i]:
+                lida[start + sht + i] = lida[start + sht + i]
+            else:
+                lida[start + sht + i] = y[i] + random.random() * 0.2
+        end = start + sht + dbl_width
+        return lida, end
+    else:
+        lida, end = gaussn(lida, start, nse_width)
+        return lida
+
+
+
+def blow(lida,start, nse_width):
+    ra = random.randint(3500,4000)
+    gap = (ra/ nse_width)
+    x = np.arange(0, ra, gap)
+    mu = np.mean(x)
+    sig = np.std(x)
+    if len(x)>nse_width:
+        x = x[0:98]
+    print(ra, gap, len(x ))
+    y = np.sin(x * np.pi / 180)
+    y1 =  np.exp(-((x - mu) ** 2 / (2.0 * sig ** 2))) / (sig * 2.507) * random.randint(1000, 2000)
+    temp = abs(y[10])
+    for i in range(len(y)):
+        if i > len(y)*0.2 and i < len(y)*0.75:
+            lida[start+ i] += ((y1[i]*random.uniform(25,25.5) +y[i]*random.uniform(3,8)) +random.uniform(8,13))*random.uniform(2,2.28)+random.uniform(10,15)
+        else:
+            lida[start + i] += y1[i]
+    end = start + nse_width
+    return lida, end
+
+
+
+# take the arg as lida, start it adds the random noise as def, return the
+# last value except the ramp and amplify
+# the scale is chosen randomly in each def of noise to scale the noise upto 15
+
+
+def gaussn(lida, start, nse_width):
+    x = np.arange(0, nse_width, 1)
+    print(nse_width)
+    mu = np.mean(x)
+    sig = np.std(x)
+    print(mu, sig)
+    if nse_width < 40:
+        mul = random.randint(150,280)
+    else:
+        mul = random.randint(280,550)
+    y = np.exp(-((x - mu) ** 2 / (2.0 * sig ** 2))) / (sig * 2.507) * mul
+    for i in range(nse_width):
+        lida[start+i]+= y[i]
+    end=start+nse_width
+    return lida, end
+
+
+def dblgaussn(lida, start, nse_width):
+    '''sft is shift parameter that value will be offset for second small guassn from first'''
+    sht = random.randint(10,(nse_width-10))
+    if (start + nse_width + sht) < 1024:
+        x = np.arange(0, nse_width, 1)
+        mu = np.mean(x)
+        sig = np.std(x)
+        print(mu, sig)
+        y = np.exp(-((x - mu)**2 / (2.0 * sig ** 2)))/(sig * 2.507)*random.randint(300, 600)
+        for i in range(nse_width):
+            lida[start + i] += y[i]
+        dbl_width = random.randint(30,40)
+        x = np.arange(0, dbl_width,1)
+        mu = np.mean(x)
+        sig = np.std(x)
+        y = np.exp(-((x - mu)**2 / (2.0 * sig ** 2)))/(sig * 2.507)*random.randint(200, 400)
+        for i in range(dbl_width):
+            if lida[start +sht +i] <= y[i]:
+                lida[start + sht + i] = lida[start +sht +i]
+            else:
+                lida[start + sht + i] = y[i] + random.random()*0.2
+        end = start + sht + dbl_width
+        return lida, end
+    else:
+        lida, end = gaussn(lida, start, nse_width)
+        return lida, end
+
+
+
+def dblmgaussn(lida, start, nse_width):
+    sht = random.randint(10, (nse_width - 10))
+    if (start + nse_width + sht) < 1024:
+        x = np.arange(0, nse_width, 1)
+        mu = np.mean(x)
+        sig = np.std(x)
+        print(mu, sig)
+        y = np.exp(-((x - mu) ** 2 / (2.0 * sig ** 2))) / (sig * 2.507) * random.randint(300, 600)
+        for i in range(nse_width):
+            lida[start + i] += y[i]
+        dbl_width = random.randint(30, 40)
+        x = np.arange(0, dbl_width, 1)
+        mu = np.mean(x)
+        sig = np.std(x)
+        y = np.exp(-((x - mu) ** 2 / (2.0 * sig ** 2))) / (sig * 2.507) * random.randint(200, 400)
+        for i in range(dbl_width):
+            if lida[start + sht + i] >= y[i]:
+                lida[start + sht + i] = lida[start + sht + i]
+            else:
+                lida[start + sht + i] = y[i] + random.random() * 0.2
+        end = start + sht + dbl_width
+        return lida, end
+    else:
+        lida, end = gaussn(lida, start, nse_width)
+        return lida, end
+
+
+def sino(lida, start, nse_width):
+    '''gap will be the distnce between 2 adjc points, flexibility is added to
+    increase or decrease with of sine noise'''
+    gap=180/nse_width
+    x = np.arange(0, 180, gap)
+    y= np.sin(x*np.pi/180)*random.uniform(7,19)
+    ch = random.choice([True, False])
+    for i in range(nse_width):
+        if (i< nse_width*75) or ch == False:
+            lida[start+i]+=y[i]+random.uniform(-0.1,0.45)
+        elif (i > nse_width*75) and ch:
+            lida[start + i] += y[i] * random.uniform(1.2,1.3)
+        else:
+            lida[start + i] += y[i]
+    end=start+nse_width
+    return lida, end
+
+
+def halfw(lida,start, nse_width):
+    gap = 360 / nse_width
+    x = np.arange(0, 360, gap)
+    print(f'x range is {len(x)}')
+    x1 = np.arange(0, 180, gap)
+    x2 = np.arange(180, 360, gap)
+    print(len(x),len(x1),len(x2))
+    y = np.sin(x1 * np.pi / 180) * random.uniform(4, 15)
+    for i in range(len(x1)):
+        if random.choice([True,False,False]) and i > 0.7*len(x1):
+            lida[start + i] += abs(y[i])*1.2
+        else:
+            lida[start + i] += abs(y[i])
+    start = start + len(x1)
+    y = np.sin(x2 * np.pi / 180) * random.uniform(9, 18)
+    print(nse_width * 0.7)
+    for i in range(len(x2)):
+        if random.choice([True, False, False]) and i > 0.7*len(x1):
+            lida[start + i] += abs(y[i]) * 1.2
+        else:
+            lida[start + i] += abs(y[i])
+    end = start + nse_width
+    return lida, end
+
+
+def ramp(lida,start,nse_width):
+    '''adds the specific values to the noise in each point'''
+    if start<=100:
+        end=start
+        return lida, end
+    else:
+        start=start-nse_width
+        ramp = random.uniform(5 , 8)
+        for i in range(nse_width):
+            if (lida[start+i] < 5):
+                lida[start+i] += random.uniform(ramp-0.1 , ramp+0.1)
+            else:
+                continue
+        end=start+nse_width
+    return lida, end
+
+
+def amplify(lida,start,nse_width):
+    '''it will multiply each of the number in noise with some
+    constant increasing number'''
+    if start <= 100:
+        end = start
+        return lida, end
+    else:
+        start = start-nse_width
+        ramp = 5
+        mult = 1.02
+        for i in range(nse_width):
+            lida[start+i] = lida[start+i]*mult
+            if lida[start+ i] > 21:
+                if random.choice([True, False]):
+                    lida[start + i] -= random.uniform(ramp - 0.2, ramp + 0.2)
+                else:
+                    lida[start + i] = random.uniform(19,19.6)
+            mult = mult+0.011
+        end = start+nse_width
+        return lida, end
+
+
+def stretch( lida, start, nse_width ):
+    ''' it will take the existing noise and tries to stretch smartly over a long range'''
+    if start <= 120:
+        end = start
+        return lida, end
+    else:
+        start = start - nse_width
+        # temp for using this as empty array and fill stretched ele in it
+        temp = []
+        # it is index for the temp list
+        index = 0
+        # new1 is the ele values in lida in the nse_width
+        # new1 = []
+        # for i in range(nse_width):
+        #     new1.append(lida[start + i])
+        # plt.plot(new1, color='black', label='first_case')
+        # print(new1)
+        for i in range(nse_width):
+            ch =  random.choice([True, True, False])
+            if ch and ((start + index) < 1024):
+                temp.append( lida[start + i])
+                temp.append( lida[start + i])
+                index = index + 2
+            elif ch == False and ((start + index) < 1024):
+                temp.append( lida[start + i])
+                index = index + 1
+            else:
+                break
+    for i in range(index):
+        lida[start+i] = temp[i]
+    end = start + index
+
+    # new2=[]
+    # for i in range(index):
+    #     new2.append(temp[i])
+    # print(new2)
+    # plt.plot(new2,color='blue', label='second_case')
+    # plt.legend()
+    # print('ok')
+    # plt.show()
+    return lida, end
+
+
+def skip(lida, start, nse_width):
+    if (start + nse_width)<1024:
+        if nse_width<10:
+            add_raise = random.uniform(1,1.5)
+            for i in range(nse_width):
+                lida[start + i] += add_raise
+        end = start + nse_width
+    else:
+        end = 1024
+    return lida,end
+
+
+
+gr1={0: 66, 1: 67, 2: 68, 3: 69, 4: 70, 5: 71, 6: 72}
+gr2={0: 48, 1: 49, 2: 50, 3: 51, 4: 52, 5: 53, 6: 54, 7: 55, 8: 56, 9: 57, 10: 58, 11: 59, 12: 60, 13: 61}
+
+
+
+def_ag = {2:[10,14],3:[15,],5:[15,18]}
+li=[5,2,3]
+print(li)
+ch = random.choice(li)
+ch = def_ag[ch]
+if (len(ch)>1):
+    print(f'{random.uniform(ch[0],ch[1])} fr')
+else:
+    print(ch)
+
+
+
+# part start to comment to test individual code
+# noise defination and lengths
+nsedt = {gaussn:[20,80], ramp:[20,80],amplify:[20,80], stretch:[20,80], skip:[60,120], sino:[20,80],\
+         skip:[60,120],dblmgaussn:[40,70],skip:[60,120],halfw:[60,150]}
+
+
+def gen_noise():
+    lida = np.arange(0, 1024, 1)
+    lida = np.random.random(1024) * 0.5
+    print(lida)
+    start = 80
+    while (start + 90)< 1024:
+        nse_ch=random.choice(list(nsedt))
+        nse_wd = random.randint(nsedt[nse_ch][0],nsedt[nse_ch][1])
+        if nse_ch == halfw and (start + nse_wd) > 1024:
+            continue
+        # print('i amok')
+        # print(nse_ch,nsedt[nse_ch][0],nsedt[nse_ch][1])
+        lida, end =nse_ch(lida,start,nse_wd )
+        start =end
+        lida, end = skip(lida,start,random.randint(0,15))
+        start = end
+        # print(end)
+    return lida
+
+
+# lida = np.random.random(1024) * 0.5
+#
+# lida = gen_noise()
+# smooth=[]
+# for i in range(len(lida)):
+#     if lida[i] < 7:
+#         lida[i] = lida[i] +1
+#     smooth.append(lida[i])
+#
+#
+# lida = smooth[0:1024]
+
+# stop commneting
+
+
+gr2={
+    66:{'matcr':[0,492],},
+    67:{'matcr':[0,492],},
+    68:{'matcr':[0,452],'lof':[467,470] ,'lop':[485,492]},
+    69:{'matcr':[0,428],'lof':[432,436],'lof1':[479,483],'rcr':[454,466],'matcr1':[492,494]},
+    70:{'matcr':[0,382],'lof':[396,400],'lof1':[443,447],'rcr':[413,430],'matcr1':[440,492]},
+    71:{'matcr':[0,348],'matcr1':[426,492],'lof':[361,365],'lof1':[408,412],
+        'slag':[378,394],'crack':[378,394],'poro':[378,394]},
+    72:{'matcr':[0,310],'matcr1':[395,492],'lof':[323,327],'lof1':[377,381],
+        'slag':[340,364],'crack':[340,364],'poro':[340,364]}
+ }
+
+
+gr1 = {50:{'matcr':[0,963]},
+       51:{'matcr':[0,958]},
+       52:{'matcr':[0,917],'lof':[930,934]},
+       53:{'matcr':[0,875],'lof':[889,893]},
+       54:{'matcr':[0,838],'lof':[851,855],'slag':[869,943],'crack':[869,943],'poro':[869,900]},
+       55:{'matcr':[0,800],'lof':[813,817],'slag':[830,943],'crack':[830,943],'poro':[830,920]},
+       56:{'matcr':[0,761],'lof':[775,779],'slag':[792,943],'crack':[792,943],'poro':[792,930]},
+       57:{'matcr':[0,724],'lof':[738,742],'slag':[756,943],'crack':[756,943],'poro':[756,920]},
+       58:{'matcr':[0,689],'lof':[702,706],'slag':[720,930],'crack':[720,930],'poro':[720,930]},
+       59:{'matcr':[0,655],'matcr1':[867,943],'lof':[667,671],
+           'slag':[685,846],'crack':[685,846],'poro':[685,846]},
+       60:{'matcr':[0,638],'matcr1':[791,943],'lof':[651,655],
+           'slag':[668,766],'crack':[668,766],'poro':[668,766]},
+       61:{'matcr':[0,578],'matcr1':[713,934],'lof':[592,596],
+           'slag':[609,682],'crack':[609,682],'poro':[609,682]}
+       }
+def_def = {'matcr': spike,'matcr1': spike,'cr': spike,'rcr': rootcr,'lof1': lof,'lof': lof,
+           'lop': lop,'slag':gausdfc,'crack':spike,'poro':poro}
+
+def_enumarte = {'matcr':1,'matcr1':1,'rcr':2,'lof':3,'lof1':3,'lop':4,'crack':5,
+                'slag':6,'poro':7}
+
+
+#change the current working directory __________________________________________________________
+os.chdir(r'C:\Users\pranav\Desktop\seminar 3rd sem\prdata\angdata')
+
+
+
+# def_ch1 = def_def[random.choice(list(def_def))]
+# print(def_ch1)
+
+# data production
+# labels defect type number, defect depth(number between 0 - 1024), group, angle, lida
+# for loop can be applied here
+
+gr = 1
+angle = 54
+
+def textfvec(): #text file vector
+    while True:
+        # defect name
+        def_ch1 = random.choice(list(gr1[angle]))
+        # defect function
+        def_ch = def_def[def_ch1]
+        # defect range
+        a, b = gr1[angle][def_ch1][0], gr1[angle][def_ch1][1]
+        # defect start
+        defsht =round((b-a)*0.22)
+        defsht = random.randint(a, b) - defsht
+        if defsht < 30:
+            continue
+
+        # defect number
+        def_num = def_enumarte[def_ch1]
+        print(angle, def_ch, a, b)
+
+        lida = np.random.random(1024) * 0.5
+
+        lida = gen_noise()
+        smooth=[]
+        for i in range(len(lida)):
+            if lida[i] < 7:
+                lida[i] = lida[i] +1
+            smooth.append(lida[i])
+
+
+        lida = smooth[0:1024]
+
+        def_ch(lida, defsht )
+        txvec = np.ones((1028), dtype=np.float32)
+
+        txvec[0:4] = [def_num, defsht, gr, angle]
+        txvec[4:] = lida
+        print(txvec)
+        break
+    return txvec
+
+
+file_name = f'scan {gr} {angle}.csv'
+headline = ['def_num', 'defsht', 'gr', 'angle']
+hdlne_lida_num= np.arange(0,1024,1)
+with open(file_name, 'w') as f:
+    for i in headline:
+        f.write(str(i)+'\t')
+    for i in hdlne_lida_num:
+        f.write(str(i)+'\t')
+    f.write('\n')
+    # the number of times it is to be repeated given below reptnum == repeat number
+    reptnum = 75
+    for k in range(reptnum):
+        txvec = textfvec()
+        for i in txvec:
+            f.write(str(i)+'\t')
+        f.write('\n')
+
+
+# trail functions for you____________________________________________
+# lida, end = gaussn(lida,30,random.randint(20,40))
+# spike(lida, 50)
+# gausdfc(lida, 80)
+# blow(lida, 60,1 60)
+# sino(lida,40,random.randint(20,80))
+# gaussn(lida,30,random.randint(20,80))
+# ramp(lida,111,random.randint(20,80))
+# amplify(lida,150,random.randint(20,80))
+# defec(lida,30,300)
+# stretch(lida, 180, random.randint(20,80))
+# dblgaussn(lida, 180 , 80)
+# dblmgaussn(lida,180, 40)
+# poro(lida,180)
+# lof(lida,180)
+# lop(lida,180)
+# rootcr(lida,180)
+# poro(lida,180)
+# halfw(lida,180, 150)
+# skip(lida, 180, random.randint(60,120))
+plt.plot(txvec[4:])
+plt.show()
+
